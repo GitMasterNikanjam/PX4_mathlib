@@ -42,9 +42,9 @@
 #ifdef __cplusplus
 
 #include "math/Limits.hpp"
-#include "math/Functions.hpp"
-#include "math/SearchMin.hpp"
-#include "math/TrajMath.hpp"
-#include "math/Utilities.hpp"
+// #include "math/Functions.hpp"
+// #include "math/SearchMin.hpp"
+// #include "math/TrajMath.hpp"
+// #include "math/Utilities.hpp"
 
 #endif

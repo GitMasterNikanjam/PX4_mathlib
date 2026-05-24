@@ -41,8 +41,13 @@
 
 #include "Limits.hpp"
 
-#include <px4_platform_common/defines.h>
-#include <matrix/matrix/math.hpp>
+#if defined(__WIN32)
+	// #include "../../px4_platform_common/defines.h"
+	#include "../../matrix/matrix/math.hpp"
+#else
+	#include <px4_platform_common/defines.h>
+	#include <matrix/matrix/math.hpp>
+#endif
 
 namespace math
 {
