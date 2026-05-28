@@ -33,8 +33,11 @@
 
 /**
  * @file Functions.hpp
+ * @brief Collection of simple, reusable mathematical functions.
  *
- * collection of rather simple mathematical functions that get used over and over again
+ * This header provides frequently used utility functions for signal shaping,
+ * interpolation, saturation, and bit operations. All functions are templated
+ * or overloaded to work with common numeric and vector types.
  */
 
 #pragma once
@@ -52,7 +55,15 @@
 namespace math
 {
 
-// Type-safe signum function with zero treated as positive
+/**
+ * @brief Type‑safe signum function (zero treated as positive).
+ *
+ * Returns -1 for negative values, 0 or 1 for zero and positive values.
+ *
+ * @tparam T Numeric type (must support comparison with 0).
+ * @param val Input value.
+ * @return -1 if val < 0, otherwise 0 or 1.
+ */
 template<typename T>
 int signNoZero(T val)
 {
@@ -60,30 +71,39 @@ int signNoZero(T val)
 }
 
 /**
- * Sign function based on a boolean
+ * @brief Returns +1 or -1 based on a boolean.
  *
- * @param[in] positive Truth value to take the sign from
- * @return 1 if positive is true, -1 if positive is false
+ * @param positive If true, returns 1; otherwise returns -1.
+ * @return 1 or -1.
  */
 inline int signFromBool(bool positive)
 {
 	return positive ? 1 : -1;
 }
 
+/**
+ * @brief Returns the square of a value.
+ *
+ * @tparam T Numeric type.
+ * @param val Input value.
+ * @return val * val.
+ */
 template<typename T>
 T sq(T val)
 {
 	return val * val;
 }
 
-/*
- * So called exponential curve function implementation.
- * It is essentially a linear combination between a linear and a cubic function.
- * @param value [-1,1] input value to function
- * @param e [0,1] function parameter to set ratio between linear and cubic shape
- * 		0 - pure linear function
- * 		1 - pure cubic function
- * @return result of function output
+/**
+ * @brief Exponential curve function – blends linear and cubic behaviour.
+ *
+ * Given an input in [-1, 1] and a parameter e in [0, 1], the output is
+ * `(1-e)*x + e*x³`. This is commonly used for RC input shaping.
+ *
+ * @tparam T Floating‑point type.
+ * @param value Input in range [-1, 1].
+ * @param e Blending factor: 0 = pure linear, 1 = pure cubic.
+ * @return Shaped output (same range as input).
  */
 template<typename T>
 const T expo(const T &value, const T &e)
@@ -93,16 +113,17 @@ const T expo(const T &value, const T &e)
 	return (1 - ec) * x + ec * x * x * x;
 }
 
-/*
- * So called SuperExpo function implementation.
- * It is a 1/(1-x) function to further shape the rc input curve intuitively.
- * I enhanced it compared to other implementations to keep the scale between [-1,1].
- * @param value [-1,1] input value to function
- * @param e [0,1] function parameter to set ratio between linear and cubic shape (see expo)
- * @param g [0,1) function parameter to set SuperExpo shape
- * 		0 - pure expo function
- * 		0.99 - very strong bent curve, stays zero until maximum stick input
- * @return result of function output
+/**
+ * @brief SuperExpo function – further shapes the curve using a rational term.
+ *
+ * Output = expo(x, e) * (1-g) / (1 - |x|*g). This creates a very steep curve
+ * near the ends when g is close to 1, while keeping the output in [-1, 1].
+ *
+ * @tparam T Floating‑point type.
+ * @param value Input in range [-1, 1].
+ * @param e Expo blending factor (see `expo`).
+ * @param g SuperExpo factor in [0, 0.99]. 0 = pure expo, 0.99 = very aggressive.
+ * @return Shaped output.
  */
 template<typename T>
 const T superexpo(const T &value, const T &e, const T &g)
@@ -112,19 +133,25 @@ const T superexpo(const T &value, const T &e, const T &g)
 	return expo(x, e) * (1 - gc) / (1 - fabsf(x) * gc);
 }
 
-/*
- * Deadzone function being linear and continuous outside of the deadzone
+/**
+ * @brief Deadzone function – linear outside a central zero region.
+ *
+ * The function is continuous and piecewise linear. For input in [-dz, dz]
+ * the output is zero; outside that region the output is rescaled to reach ±1.
+ *
+ * @verbatim
  * 1                ------
  *                /
  *             --
  *           /
  * -1 ------
  *        -1 -dz +dz 1
- * @param value [-1,1] input value to function
- * @param dz [0,1) ratio between deazone and complete span
- * 		0 - no deadzone, linear -1 to 1
- * 		0.5 - deadzone is half of the span [-0.5,0.5]
- * 		0.99 - almost entire span is deadzone
+ * @endverbatim
+ *
+ * @tparam T Floating‑point type.
+ * @param value Input in range [-1, 1].
+ * @param dz Deadzone size (0 = no deadzone, 0.5 = half the span, <1).
+ * @return Output after deadzone application.
  */
 template<typename T>
 const T deadzone(const T &value, const T &dz)
@@ -137,21 +164,36 @@ const T deadzone(const T &value, const T &dz)
 	return out * (fabsf(x) > dzc);
 }
 
+/**
+ * @brief Applies deadzone then expo shaping.
+ *
+ * Convenience function that chains `deadzone` and `expo`.
+ *
+ * @param value Input in [-1, 1].
+ * @param e Expo factor.
+ * @param dz Deadzone size.
+ * @return Shaped output.
+ */
 template<typename T>
 const T expo_deadzone(const T &value, const T &e, const T &dz)
 {
 	return expo(deadzone(value, dz), e);
 }
 
-
-/*
- * Constant, linear, constant function with the two corner points as parameters
- * y_high          -------
- *                /
- *               /
- *              /
- * y_low -------
- *         x_low   x_high
+/**
+ * @brief Constant‑linear‑constant interpolation with two breakpoints.
+ *
+ * For input ≤ x_low, output = y_low.
+ * For input ≥ x_high, output = y_high.
+ * Otherwise linear interpolation between (x_low, y_low) and (x_high, y_high).
+ *
+ * @tparam T Floating‑point type.
+ * @param value Input.
+ * @param x_low Lower breakpoint x‑coordinate.
+ * @param x_high Upper breakpoint x‑coordinate.
+ * @param y_low Output at x_low.
+ * @param y_high Output at x_high.
+ * @return Interpolated value.
  */
 template<typename T>
 const T interpolate(const T &value, const T &x_low, const T &x_high, const T &y_low, const T &y_high)
@@ -182,6 +224,19 @@ const T interpolate(const T &value, const T &x_low, const T &x_high, const T &y_
  * y[0] -------
  *        0 1/(N-1) 2/(N-1) ... 1
  */
+
+ /**
+ * @brief Interpolation with N equally spaced breakpoints on [0, 1].
+ *
+ * The x‑coordinates are `i/(N-1)` for i = 0 … N-1. The output is piecewise
+ * constant outside the interval [0,1] and piecewise linear inside.
+ *
+ * @tparam T Floating‑point type.
+ * @tparam N Number of breakpoints (array size).
+ * @param value Input (expected in [0,1]).
+ * @param y Array of output values at the breakpoints.
+ * @return Interpolated value.
+ */
 template<typename T, size_t N>
 const T interpolateN(const T &value, const T(&y)[N])
 {
@@ -201,6 +256,20 @@ const T interpolateN(const T &value, const T(&y)[N])
  * y[0] -------
  *          x[0] x[1] ... x[N-1]
  * Note: x[N] corner coordinates have to be sorted in ascending order
+ */
+
+/**
+ * @brief Interpolation with arbitrary, sorted breakpoints.
+ *
+ * The arrays `x` (sorted ascending) and `y` define N breakpoints. Output is
+ * constant below x[0] and above x[N-1], linear between.
+ *
+ * @tparam T Floating‑point type.
+ * @tparam N Number of breakpoints.
+ * @param value Input.
+ * @param x Array of x‑coordinates (must be sorted).
+ * @param y Array of corresponding output values.
+ * @return Interpolated value.
  */
 template<typename T, size_t N>
 const T interpolateNXY(const T &value, const T(&x)[N], const T(&y)[N])
@@ -226,6 +295,18 @@ const T interpolateNXY(const T &value, const T(&x)[N], const T(&y)[N])
  * 0     -------
  *             0    1
  */
+
+/**
+ * @brief Square‑root followed by linear for inputs > 1.
+ *
+ * For input < 0 returns 0.
+ * For 0 ≤ input ≤ 1 returns sqrt(input).
+ * For input > 1 returns input (linear).
+ *
+ * @tparam T Floating‑point type.
+ * @param value Input.
+ * @return Shaped output.
+ */
 template<typename T>
 const T sqrt_linear(const T &value)
 {
@@ -240,11 +321,14 @@ const T sqrt_linear(const T &value)
 	}
 }
 
-/*
- * Linear interpolation between 2 points a, and b.
- * s=0 return a
- * s=1 returns b
- * Any value for s is valid.
+/**
+ * @brief Linear interpolation between a and b.
+ *
+ * @tparam T Numeric type.
+ * @param a Value at s=0.
+ * @param b Value at s=1.
+ * @param s Interpolation factor (any real number).
+ * @return (1-s)*a + s*b.
  */
 template<typename T>
 const T lerp(const T &a, const T &b, const T &s)
@@ -252,6 +336,16 @@ const T lerp(const T &a, const T &b, const T &s)
 	return (static_cast<T>(1) - s) * a + s * b;
 }
 
+/**
+ * @brief Generic negation (default: unary minus).
+ *
+ * Specialised for int16_t to handle the asymmetric range (-32768 … 32767)
+ * by mapping INT16_MIN to INT16_MAX and vice versa.
+ *
+ * @tparam T Numeric type (default implementation uses unary -).
+ * @param value Value to negate.
+ * @return Negated value with overflow protection for int16_t.
+ */
 template<typename T>
 constexpr T negate(T value)
 {
@@ -259,6 +353,16 @@ constexpr T negate(T value)
 	return -value;
 }
 
+/**
+ * @brief Specialisation for int16_t: safe negation with symmetric handling.
+ *
+ * Since INT16_MIN = -32768 and INT16_MAX = 32767, simple `-value` would overflow
+ * for INT16_MIN. This implementation returns INT16_MAX when given INT16_MIN,
+ * and vice versa.
+ *
+ * @param value int16_t value.
+ * @return Symmetric negation.
+ */
 template<>
 constexpr int16_t negate<int16_t>(int16_t value)
 {
@@ -277,6 +381,13 @@ constexpr int16_t negate<int16_t>(int16_t value)
  * in a given integer.
  */
 
+ /**
+ * @brief Counts the number of set bits (Hamming weight) in an integer.
+ *
+ * @tparam T Unsigned integer type (or any integral type).
+ * @param n Input value.
+ * @return Number of 1‑bits.
+ */
 template<typename T>
 int countSetBits(T n)
 {
@@ -290,16 +401,34 @@ int countSetBits(T n)
 	return count;
 }
 
+/**
+ * @brief Checks if a float is finite (not NaN or infinite).
+ *
+ * @param value Floating‑point value.
+ * @return true if finite, false otherwise.
+ */
 inline bool isFinite(const float &value)
 {
 	return PX4_ISFINITE(value);
 }
 
+/**
+ * @brief Checks if all elements of a 2D vector are finite.
+ *
+ * @param value Vector2f.
+ * @return true if all components are finite.
+ */
 inline bool isFinite(const matrix::Vector2f &value)
 {
 	return value.isAllFinite();
 }
 
+/**
+ * @brief Checks if all elements of a 3D vector are finite.
+ *
+ * @param value Vector3f.
+ * @return true if all components are finite.
+ */
 inline bool isFinite(const matrix::Vector3f &value)
 {
 	return value.isAllFinite();
