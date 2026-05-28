@@ -33,8 +33,12 @@
 
 /**
  * @file TrajMath.hpp
+ * @brief Mathematical utilities for trajectory generation and speed limiting.
  *
- * collection of functions used for trajectory generation
+ * This header provides functions to compute maximum allowable speeds based on
+ * kinematic constraints (jerk, acceleration, distance) and geometric waypoint
+ * turning limits. It also includes helpers for braking distance and circle‑line
+ * intersection used in path planning.
  */
 
 #pragma once
@@ -42,21 +46,29 @@
 namespace math
 {
 
+/**
+ * @namespace trajectory
+ * @brief Functions for trajectory generation and speed planning.
+ */
 namespace trajectory
 {
 
-/* Compute the maximum possible speed on the track given the desired speed,
- * remaining distance, the maximum acceleration and the maximum jerk.
- * We assume a constant acceleration profile with a delay of 2*accel/jerk
- * (time to reach the desired acceleration from opposite max acceleration)
- * Equation to solve: vel_final^2 = vel_initial^2 - 2*accel*(x - vel_initial*2*accel/jerk)
+/**
+ * @brief Computes the maximum possible speed over a remaining distance under jerk and acceleration limits.
  *
- * @param jerk maximum jerk
- * @param accel maximum acceleration
- * @param braking_distance distance to the desired point
- * @param final_speed the still-remaining speed of the vehicle when it reaches the braking_distance
+ * The function solves the equation resulting from a constant‑acceleration braking profile
+ * that includes a finite jerk‑limited transition time (2 * accel / jerk) to reverse acceleration.
+ * The derived formula is:
+ *   v_final² = v_initial² - 2 * accel * (distance - v_initial * 2 * accel / jerk)
+ * Solved for v_initial (max_speed) given the braking distance, final speed, jerk, and accel.
  *
- * @return maximum speed
+ * @param jerk Maximum jerk (positive, units: m/s³ or similar).
+ * @param accel Maximum acceleration magnitude (positive, units: m/s²).
+ * @param braking_distance Remaining distance to the target point (units: m).
+ * @param final_speed Desired speed when reaching the target (units: m/s).
+ *
+ * @return Maximum allowed initial speed (≥ final_speed) that can be reduced to final_speed
+ *         within the given distance respecting jerk and acceleration limits.
  */
 inline float computeMaxSpeedFromDistance(const float jerk, const float accel, const float braking_distance,
 		const float final_speed)
@@ -70,19 +82,26 @@ inline float computeMaxSpeedFromDistance(const float jerk, const float accel, co
 	return fmaxf(max_speed, final_speed);
 }
 
-/* Compute the maximum tangential speed in a circle defined by two line segments of length "d"
- * forming a V shape, opened by an angle "alpha". The circle is tangent to the end of the
- * two segments as shown below:
+/**
+ * @brief Computes the maximum tangential speed through a V‑shaped waypoint under lateral acceleration limit.
+ *
+ * The waypoint is formed by two line segments of equal length `d` meeting at an angle `alpha`.
+ * A circle is inscribed tangent to the ends of both segments. The maximum tangential speed
+ * is derived from the centripetal acceleration constraint: a = v² / R, where R = d * tan(α/2).
+ *
+ * @verbatim
  *      \\
  *      | \ d
  *      /  \
  *  __='___a\
  *      d
- *  @param alpha angle between the two line segments
- *  @param accel maximum lateral acceleration
- *  @param d length of the two line segments
+ * @endverbatim
  *
- *  @return maximum tangential speed
+ * @param alpha Opening angle between the two segments (radians).
+ * @param accel Maximum lateral acceleration (units: m/s²).
+ * @param d Length of each line segment (units: m).
+ *
+ * @return Maximum tangential speed (units: m/s) that keeps lateral acceleration ≤ accel.
  */
 inline float computeMaxSpeedInWaypoint(const float alpha, const float accel, const float d)
 {
@@ -92,17 +111,20 @@ inline float computeMaxSpeedInWaypoint(const float alpha, const float accel, con
 	return max_speed_in_turn;
 }
 
-/* Compute the braking distance given a maximum acceleration, maximum jerk and a maximum delay acceleration.
- * We assume a constant acceleration profile with a delay of accel_delay_max/jerk
- * (time to reach the desired acceleration from opposite max acceleration)
- * Equation to solve: vel_final^2 = vel_initial^2 - 2*accel*(x - vel_initial*2*accel/jerk)
+/**
+ * @brief Computes the braking distance needed to reduce from an initial velocity to zero,
+ *        considering jerk‑limited acceleration reversal.
  *
- * @param velocity initial velocity
- * @param jerk maximum jerk
- * @param accel maximum target acceleration during the braking maneuver
- * @param accel_delay_max the acceleration defining the delay described above
+ * The braking profile assumes constant deceleration `accel` after a delay time of
+ * `accel_delay_max / jerk` during which acceleration ramps from +accel to -accel.
+ * The derived distance is: distance = v * (v / (2*accel) + accel_delay_max / jerk).
  *
- * @return braking distance
+ * @param velocity Initial forward velocity (units: m/s).
+ * @param jerk Maximum jerk (units: m/s³).
+ * @param accel Maximum deceleration magnitude (positive, units: m/s²).
+ * @param accel_delay_max The acceleration value that defines the delay (typically = accel).
+ *
+ * @return Minimum distance required to come to a stop (units: m).
  */
 inline float computeBrakingDistanceFromVelocity(const float velocity, const float jerk, const float accel,
 		const float accel_delay_max)
@@ -110,23 +132,31 @@ inline float computeBrakingDistanceFromVelocity(const float velocity, const floa
 	return velocity * (velocity / (2.0f * accel) + accel_delay_max / jerk);
 }
 
-/* Compute the maximum distance between a point and a circle given a direction vector pointing from the point
- * towards the circle. The point can be inside or outside the circle.
+/**
+ * @brief Finds the farthest distance from a point to a circle along a given direction.
+ *
+ * Given a point P, a circle (center C, radius R), and a direction vector D (pointing from P
+ * towards the circle), this function computes the distance `t` such that
+ * P + t * (D/|D|) lies on the circle. If the ray from P in direction D intersects the circle
+ * at two points, the larger (farther) intersection distance is returned.
+ *
+ * @verbatim
  *                  _
  *               ,=' '=,               __
  *    P-->------/-------A   Distance = PA
  *       Dir   |    x    |
  *              \       /
  *               "=,_,="
- * Equation to solve: ||(point - circle_pos) + direction_unit * distance_to_circle|| = radius
+ * @endverbatim
  *
- * @param pos position of the point
- * @param circle_pos position of the center of the circle
- * @param radius radius of the circle
- * @param direction vector pointing from the point towards the circle
+ * @param pos Position of the starting point.
+ * @param circle_pos Center of the circle.
+ * @param radius Radius of the circle.
+ * @param direction Vector pointing from the point towards the circle (need not be unit).
  *
- * @return longest distance between the point to the circle in the direction indicated by the vector or NAN if the
- * vector does not point towards the circle
+ * @return The longest distance from the point to the circle along the given direction.
+ *         Returns NAN if the ray does not intersect the circle (i.e., direction points away,
+ *         or the line misses the circle entirely).
  */
 inline float getMaxDistanceToCircle(const matrix::Vector2f &pos, const matrix::Vector2f &circle_pos, float radius,
 				    const matrix::Vector2f &direction)

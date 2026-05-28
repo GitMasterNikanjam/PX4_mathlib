@@ -31,6 +31,16 @@
  *
  ****************************************************************************/
 
+ /**
+ * @file Utilities.hpp
+ * @brief Mathematical utilities for rotations, Euler angles, and quaternion conversions.
+ *
+ * This header provides helper functions for converting between rotation representations,
+ * extracting yaw angles while avoiding gimbal lock, and updating rotation matrices with
+ * new yaw values. It supports both 3-2-1 (yaw-pitch-roll) and 3-1-2 (yaw-roll-pitch)
+ * Tait‑Bryan sequences.
+ */
+
 #ifndef MATH_UTILITIES_H
 #define MATH_UTILITIES_H
 
@@ -39,18 +49,34 @@
 namespace math
 {
 
+/**
+ * @namespace Utilities
+ * @brief Collection of rotation-related utility functions.
+ */
 namespace Utilities
 {
 
-// return the square of two floating point numbers - used in auto coded sections
+/**
+ * @brief Returns the square of a floating-point number.
+ * @param var Input value.
+ * @return var * var.
+ */
 static constexpr float sq(float var) { return var * var; }
 
-// converts Tait-Bryan 312 sequence of rotations from frame 1 to frame 2
-// to the corresponding rotation matrix that rotates from frame 2 to frame 1
-// rot312(0) - First rotation is a RH rotation about the Z axis (rad)
-// rot312(1) - Second rotation is a RH rotation about the X axis (rad)
-// rot312(2) - Third rotation is a RH rotation about the Y axis (rad)
-// See http://www.atacolorado.com/eulersequences.doc
+/**
+ * @brief Converts a 3-1-2 Tait‑Bryan rotation sequence to a rotation matrix.
+ *
+ * The sequence applies rotations in the order: first about Z, then about X, then about Y.
+ * The resulting matrix rotates vectors from frame 2 to frame 1.
+ * See http://www.atacolorado.com/eulersequences.doc
+ * 
+ * @tparam T Floating-point type (default float).
+ * @param rot312 Vector containing (yaw, roll, pitch) in radians:
+ *               rot312(0) = first rotation about Z (yaw)
+ *               rot312(1) = second rotation about X (roll)
+ *               rot312(2) = third rotation about Y (pitch)
+ * @return Direction cosine matrix (rotation matrix) from frame 2 to frame 1.
+ */
 template<typename T = float>
 inline matrix::Dcm<T> taitBryan312ToRotMat(const matrix::Vector3<T> &rot312)
 {
@@ -76,6 +102,16 @@ inline matrix::Dcm<T> taitBryan312ToRotMat(const matrix::Vector3<T> &rot312)
 	return R;
 }
 
+/**
+ * @brief Converts a quaternion to the corresponding inverse rotation matrix.
+ *
+ * Computes the direction cosine matrix that represents the same orientation as the
+ * quaternion, but with the transpose (inverse) relationship.
+ *
+ * @tparam T Floating-point type (default float).
+ * @param quat Quaternion (w, x, y, z) representing rotation from frame 1 to frame 2.
+ * @return Dcm matrix rotating from frame 2 to frame 1 (inverse of quaternion's matrix).
+ */
 template<typename T = float>
 inline matrix::Dcm<T> quatToInverseRotMat(const matrix::Quaternion<T> &quat)
 {
@@ -104,27 +140,52 @@ inline matrix::Dcm<T> quatToInverseRotMat(const matrix::Quaternion<T> &quat)
 	return dcm;
 }
 
-// We should use a 3-2-1 Tait-Bryan (yaw-pitch-roll) rotation sequence
-// when there is more roll than pitch tilt and a 3-1-2 rotation sequence
-// when there is more pitch than roll tilt to avoid gimbal lock.
+/**
+ * @brief Determines whether to use the 3-2-1 (yaw-pitch-roll) rotation sequence.
+ *
+ * The 3-2-1 sequence is preferred when roll tilt is larger than pitch tilt;
+ * otherwise the 3-1-2 sequence is used to avoid gimbal lock.
+ *
+ * @tparam T Floating-point type (default float).
+ * @param R Rotation matrix.
+ * @return true if |R(2,0)| < |R(2,1)| (use 3-2-1), false otherwise (use 3-1-2).
+ */
 template<typename T = float>
 inline bool shouldUse321RotationSequence(const matrix::Dcm<T> &R)
 {
 	return fabsf(R(2, 0)) < fabsf(R(2, 1));
 }
 
+/**
+ * @brief Extracts yaw angle from a rotation matrix using the 3-2-1 sequence.
+ * @tparam T Floating-point type.
+ * @param R Rotation matrix.
+ * @return Yaw angle in radians (range -π to π).
+ */
 template<typename T = float>
 inline float getEuler321Yaw(const matrix::Dcm<T> &R)
 {
 	return atan2f(R(1, 0), R(0, 0));
 }
 
+/**
+ * @brief Extracts yaw angle from a rotation matrix using the 3-1-2 sequence.
+ * @tparam T Floating-point type.
+ * @param R Rotation matrix.
+ * @return Yaw angle in radians (range -π to π).
+ */
 template<typename T = float>
 inline float getEuler312Yaw(const matrix::Dcm<T> &R)
 {
 	return atan2f(-R(0, 1), R(1, 1));
 }
 
+/**
+ * @brief Extracts yaw angle from a quaternion using the 3-2-1 sequence.
+ * @tparam T Floating-point type.
+ * @param q Quaternion (w, x, y, z).
+ * @return Yaw angle in radians.
+ */
 template<typename T = float>
 inline T getEuler321Yaw(const matrix::Quaternion<T> &q)
 {
@@ -135,6 +196,12 @@ inline T getEuler321Yaw(const matrix::Quaternion<T> &q)
 	return atan2f(a, b);
 }
 
+/**
+ * @brief Extracts yaw angle from a quaternion using the 3-1-2 sequence.
+ * @tparam T Floating-point type.
+ * @param q Quaternion (w, x, y, z).
+ * @return Yaw angle in radians.
+ */
 template<typename T = float>
 inline T getEuler312Yaw(const matrix::Quaternion<T> &q)
 {
@@ -145,6 +212,16 @@ inline T getEuler312Yaw(const matrix::Quaternion<T> &q)
 	return atan2f(a, b);
 }
 
+/**
+ * @brief Extracts yaw angle from a rotation matrix, automatically selecting the best sequence.
+ *
+ * Chooses between 3-2-1 and 3-1-2 sequences based on `shouldUse321RotationSequence()` to
+ * avoid gimbal lock.
+ *
+ * @tparam T Floating-point type.
+ * @param R Rotation matrix.
+ * @return Yaw angle in radians.
+ */
 template<typename T = float>
 inline T getEulerYaw(const matrix::Dcm<T> &R)
 {
@@ -156,12 +233,28 @@ inline T getEulerYaw(const matrix::Dcm<T> &R)
 	}
 }
 
+/**
+ * @brief Extracts yaw angle from a quaternion, automatically selecting the best sequence.
+ * @tparam T Floating-point type.
+ * @param q Quaternion (w, x, y, z).
+ * @return Yaw angle in radians.
+ */
 template<typename T = float>
 inline T getEulerYaw(const matrix::Quaternion<T> &q)
 {
 	return getEulerYaw(matrix::Dcm<T>(q));
 }
 
+/**
+ * @brief Updates a rotation matrix with a new yaw angle using the 3-2-1 sequence.
+ *
+ * The pitch and roll angles are preserved from the input matrix.
+ *
+ * @tparam T Floating-point type.
+ * @param yaw New yaw angle in radians.
+ * @param rot_in Input rotation matrix.
+ * @return Rotation matrix with updated yaw.
+ */
 template<typename T = float>
 inline matrix::Dcm<T> updateEuler321YawInRotMat(T yaw, const matrix::Dcm<T> &rot_in)
 {
@@ -170,6 +263,16 @@ inline matrix::Dcm<T> updateEuler321YawInRotMat(T yaw, const matrix::Dcm<T> &rot
 	return matrix::Dcm<T>(euler321);
 }
 
+/**
+ * @brief Updates a rotation matrix with a new yaw angle using the 3-1-2 sequence.
+ *
+ * Roll and pitch are re-computed from the input matrix using the 3-1-2 convention.
+ *
+ * @tparam T Floating-point type.
+ * @param yaw New yaw angle in radians.
+ * @param rot_in Input rotation matrix.
+ * @return Rotation matrix with updated yaw.
+ */
 template<typename T = float>
 inline matrix::Dcm<T> updateEuler312YawInRotMat(T yaw, const matrix::Dcm<T> &rot_in)
 {
@@ -179,7 +282,17 @@ inline matrix::Dcm<T> updateEuler312YawInRotMat(T yaw, const matrix::Dcm<T> &rot
 	return taitBryan312ToRotMat(rotVec312);
 }
 
-// Checks which euler rotation sequence to use and update yaw in rotation matrix
+/**
+ * @brief Updates a rotation matrix with a new yaw angle, automatically selecting the sequence.
+ *
+ * Calls either `updateEuler321YawInRotMat` or `updateEuler312YawInRotMat` based on the
+ * `shouldUse321RotationSequence` test.
+ *
+ * @tparam T Floating-point type.
+ * @param yaw New yaw angle in radians.
+ * @param rot_in Input rotation matrix.
+ * @return Rotation matrix with updated yaw.
+ */
 template<typename T = float>
 inline matrix::Dcm<T> updateYawInRotMat(T yaw, const matrix::Dcm<T> &rot_in)
 {
