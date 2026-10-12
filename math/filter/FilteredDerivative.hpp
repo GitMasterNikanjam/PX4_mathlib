@@ -42,8 +42,8 @@
 #pragma once
 
 // #include <float.h>
-// #include <mathlib/math/Functions.hpp>
-#include <mathlib/math/filter/AlphaFilter.hpp>
+// #include <math/Functions.hpp>
+#include <math/filter/AlphaFilter.hpp>
 
 using namespace math;
 

@@ -45,7 +45,7 @@
 
 #pragma once
 
-#include <lib/mathlib/mathlib.h>
+#include <mathlib.h>
 
 namespace math
 {

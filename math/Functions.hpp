@@ -46,14 +46,21 @@
 
 #include "Limits.hpp"
 
+#ifndef M_PI_F
+#define M_PI_F 3.14159265358979323846f
+#endif
+#ifndef M_TWOPI_F
+#define M_TWOPI_F (2.f * M_PI_F)
+#endif
+
 #if defined(__has_include) && __has_include(<px4_platform_common/defines.h>)
 	#include <px4_platform_common/defines.h>
 #endif
 
 #if defined(__has_include) && __has_include(<matrix/math.hpp>)
 	#include <matrix/math.hpp>
-#elif defined(__has_include) && __has_include(<matrix/matrix/math.hpp>)
-	#include <matrix/matrix/math.hpp>
+#elif defined(__has_include) && __has_include(<matrix/math.hpp>)
+	#include <matrix/math.hpp>
 #endif
 
 #ifndef PX4_ISFINITE
