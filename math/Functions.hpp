@@ -42,14 +42,22 @@
 
 #pragma once
 
+#include <cmath>
+
 #include "Limits.hpp"
 
-#if defined(__WIN32)
-	// #include "../../px4_platform_common/defines.h"
-	#include "../../matrix/matrix/math.hpp"
-#else
+#if defined(__has_include) && __has_include(<px4_platform_common/defines.h>)
 	#include <px4_platform_common/defines.h>
+#endif
+
+#if defined(__has_include) && __has_include(<matrix/math.hpp>)
+	#include <matrix/math.hpp>
+#elif defined(__has_include) && __has_include(<matrix/matrix/math.hpp>)
 	#include <matrix/matrix/math.hpp>
+#endif
+
+#ifndef PX4_ISFINITE
+	#define PX4_ISFINITE(value) std::isfinite(value)
 #endif
 
 namespace math
