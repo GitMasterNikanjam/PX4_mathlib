@@ -42,7 +42,7 @@
 #pragma once
 
 #include <px4_platform_common/defines.h>
-#include <matrix/SquareMatrix.hpp>
+#include <src/SquareMatrix.hpp>
 
 namespace math
 {

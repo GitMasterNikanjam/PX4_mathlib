@@ -32,7 +32,7 @@
  ****************************************************************************/
 
 #include <gtest/gtest.h>
-#include <matrix/matrix/math.hpp>
+#include <matrix/src/math.hpp>
 #include "Functions.hpp"
 
 #include "TrajMath.hpp"

@@ -99,7 +99,7 @@ Uses Welford’s algorithm and Kahan summation for numerical stability. Handles 
 
 ### 6. `WelfordMeanVector.hpp` – Online Statistics (Vector)
 
-**Requires the [PX4 Matrix library](https://github.com/PX4/Matrix).**  
+**Requires the [PX4 Matrix library](https://github.com/PX4/Matrix).**
 Provides the same interface but for fixed‑size vectors. Maintains a mean vector and a full covariance matrix.
 
 | Method | Description |
@@ -212,7 +212,7 @@ int main() {
 
 ```cpp
 #include "math/WelfordMeanVector.hpp"
-#include <matrix/math.hpp>
+#include <src/math.hpp>
 #include <cstdio>
 
 int main() {

@@ -57,10 +57,8 @@
 	#include <px4_platform_common/defines.h>
 #endif
 
-#if defined(__has_include) && __has_include(<matrix/math.hpp>)
-	#include <matrix/math.hpp>
-#elif defined(__has_include) && __has_include(<matrix/math.hpp>)
-	#include <matrix/math.hpp>
+#if defined(__has_include) && __has_include(<src/math.hpp>)
+	#include <src/math.hpp>
 #endif
 
 #ifndef PX4_ISFINITE

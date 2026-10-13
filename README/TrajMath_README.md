@@ -19,10 +19,10 @@ All functions are `inline` and live in the `math::trajectory` namespace.
 float computeMaxSpeedFromDistance(float jerk, float accel, float braking_distance, float final_speed);
 ```
 
-**Purpose**  
+**Purpose**
 Given a remaining distance, determine the maximum starting speed that can be reduced to a target `final_speed` without exceeding jerk or acceleration limits.
 
-**Kinematic model**  
+**Kinematic model**
 The profile assumes a constant deceleration `accel` after a jerk‑limited ramp time of `2*accel/jerk`. The governing equation is:
 
 ```
@@ -31,11 +31,11 @@ v_final² = v_initial² - 2 * accel * (distance - v_initial * (2 * accel / jerk)
 
 The function solves for `v_initial` (returned as `max_speed`).
 
-**Parameters**  
-- `jerk` – maximum jerk (positive, m/s³)  
-- `accel` – maximum acceleration magnitude (positive, m/s²)  
-- `braking_distance` – remaining distance to target (m)  
-- `final_speed` – desired speed at target (m/s)  
+**Parameters**
+- `jerk` – maximum jerk (positive, m/s³)
+- `accel` – maximum acceleration magnitude (positive, m/s²)
+- `braking_distance` – remaining distance to target (m)
+- `final_speed` – desired speed at target (m/s)
 
 **Returns** – maximum initial speed (≥ `final_speed`) that satisfies the constraints.
 
@@ -47,20 +47,20 @@ The function solves for `v_initial` (returned as `max_speed`).
 float computeMaxSpeedInWaypoint(float alpha, float accel, float d);
 ```
 
-**Purpose**  
+**Purpose**
 Compute the maximum tangential speed when traversing a sharp waypoint formed by two equal‑length segments.
 
-**Geometry**  
+**Geometry**
 Two line segments of length `d` meet at an opening angle `α`. An inscribed circle of radius `R = d * tan(α/2)` is tangent to the ends of both segments. The maximum speed is limited by the lateral (centripetal) acceleration:
 
 ```
 v_max = sqrt(accel * d * tan(α/2))
 ```
 
-**Parameters**  
-- `alpha` – angle between the two segments (radians)  
-- `accel` – maximum lateral acceleration (m/s²)  
-- `d` – length of each segment (m)  
+**Parameters**
+- `alpha` – angle between the two segments (radians)
+- `accel` – maximum lateral acceleration (m/s²)
+- `d` – length of each segment (m)
 
 **Returns** – maximum tangential speed (m/s).
 
@@ -72,21 +72,21 @@ v_max = sqrt(accel * d * tan(α/2))
 float computeBrakingDistanceFromVelocity(float velocity, float jerk, float accel, float accel_delay_max);
 ```
 
-**Purpose**  
+**Purpose**
 Calculate the distance required to come to a complete stop from an initial velocity using a deceleration profile that includes a jerk‑limited delay.
 
-**Profile**  
+**Profile**
 The deceleration ramps from `+accel` to `-accel` over a delay `accel_delay_max / jerk`, after which it stays at `-accel`. The resulting distance is:
 
 ```
 distance = velocity * ( velocity / (2 * accel) + accel_delay_max / jerk )
 ```
 
-**Parameters**  
-- `velocity` – initial forward speed (m/s)  
-- `jerk` – maximum jerk (m/s³)  
-- `accel` – maximum deceleration magnitude (positive, m/s²)  
-- `accel_delay_max` – acceleration value defining the delay (typically equal to `accel`)  
+**Parameters**
+- `velocity` – initial forward speed (m/s)
+- `jerk` – maximum jerk (m/s³)
+- `accel` – maximum deceleration magnitude (positive, m/s²)
+- `accel_delay_max` – acceleration value defining the delay (typically equal to `accel`)
 
 **Returns** – minimum braking distance (m).
 
@@ -99,7 +99,7 @@ float getMaxDistanceToCircle(const matrix::Vector2f &pos, const matrix::Vector2f
                              float radius, const matrix::Vector2f &direction);
 ```
 
-**Purpose**  
+**Purpose**
 Find the farthest distance from a point to a circle along a given direction vector. Equivalent to solving for the largest `t ≥ 0` such that:
 
 ```
@@ -108,11 +108,11 @@ Find the farthest distance from a point to a circle along a given direction vect
 
 If the ray intersects the circle twice, the larger (farther) intersection distance is returned.
 
-**Parameters**  
-- `pos` – starting point (2D vector)  
-- `circle_pos` – centre of the circle (2D vector)  
-- `radius` – circle radius (m)  
-- `direction` – vector pointing from `pos` towards the circle (need not be unit)  
+**Parameters**
+- `pos` – starting point (2D vector)
+- `circle_pos` – centre of the circle (2D vector)
+- `radius` – circle radius (m)
+- `direction` – vector pointing from `pos` towards the circle (need not be unit)
 
 **Returns** – distance to the farthest intersection point, or `NAN` if the ray does not intersect the circle (e.g., direction points away, or the line misses the circle entirely).
 
@@ -122,7 +122,7 @@ If the ray intersects the circle twice, the larger (farther) intersection distan
 
 ```cpp
 #include "TrajMath.hpp"
-#include <matrix/math.hpp>
+#include <src/math.hpp>
 #include <cmath>
 #include <cstdio>
 
@@ -156,7 +156,7 @@ int main() {
 
 ## Dependencies
 
-- `matrix/math.hpp` – PX4 matrix library (for `Vector2f` and basic vector operations).  
+- `src/math.hpp` – PX4 matrix library (for `Vector2f` and basic vector operations).
 - `<cmath>` – implicitly used for `sqrtf`, `tanf`, `NAN`.
 
 ## Notes

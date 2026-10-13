@@ -40,7 +40,7 @@
 
 #include <math/Functions.hpp>
 #include <float.h>
-#include <matrix/math.hpp>
+#include <src/math.hpp>
 
 namespace math
 {

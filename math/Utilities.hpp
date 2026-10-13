@@ -44,7 +44,7 @@
 #ifndef MATH_UTILITIES_H
 #define MATH_UTILITIES_H
 
-#include <matrix/math.hpp>
+#include <src/math.hpp>
 
 namespace math
 {

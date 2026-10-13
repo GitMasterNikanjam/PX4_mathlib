@@ -79,7 +79,7 @@ When pitch approaches ±90° (the “gimbal lock” region of 3‑2‑1 Euler an
 
 ```cpp
 #include "Utilities.hpp"
-#include <matrix/math.hpp>
+#include <src/math.hpp>
 
 using namespace math::Utilities;
 

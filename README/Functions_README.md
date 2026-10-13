@@ -82,7 +82,7 @@ int main() {
 ## Dependencies
 
 - `Limits.hpp` – provides `constrain`, `min`, `max`, `isInRange`.
-- `matrix/math.hpp` – for `matrix::sign`, `Vector2f`, `Vector3f`.
+- `src/math.hpp` – for `matrix::sign`, `Vector2f`, `Vector3f`.
 - `px4_platform_common/defines.h` – defines `PX4_ISFINITE`.
 
 ## Notes

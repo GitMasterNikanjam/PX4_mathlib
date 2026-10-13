@@ -45,7 +45,7 @@
 #include <math/Functions.hpp>
 #include <cmath>
 #include <float.h>
-#include <matrix/math.hpp>
+#include <src/math.hpp>
 
 namespace math
 {

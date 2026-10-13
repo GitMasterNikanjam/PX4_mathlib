@@ -33,7 +33,7 @@
 
 #include <gtest/gtest.h>
 #include <random>
-#include <lib/matrix/matrix/math.hpp>
+#include <lib/matrix/src/math.hpp>
 #include "WelfordMeanVector.hpp"
 
 using namespace math;

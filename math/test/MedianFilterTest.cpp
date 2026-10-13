@@ -37,7 +37,7 @@
  */
 
 #include <gtest/gtest.h>
-#include <matrix/matrix/math.hpp>
+#include <matrix/src/math.hpp>
 #include <mathlib/mathlib.h>
 
 #include <lib/mathlib/math/filter/MedianFilter.hpp>

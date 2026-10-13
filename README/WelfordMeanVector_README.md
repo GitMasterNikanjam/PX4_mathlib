@@ -41,7 +41,7 @@ Header‑only C++ class for **online (streaming) mean and covariance estimation*
 
 ```cpp
 #include "WelfordMeanVector.hpp"
-#include <matrix/math.hpp>
+#include <src/math.hpp>
 
 int main() {
     // 3D vector estimator
